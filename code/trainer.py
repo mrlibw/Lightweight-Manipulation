@@ -282,6 +282,8 @@ class condGANTrainer(object):
                 is_zero_grad = (step%batch_aug == 0)
                 is_step = (step%batch_aug == batch_aug-1)
                 divider = (self.num_batches%batch_aug) if is_last else batch_aug
+                if (divider==0):
+                    divider = batch_aug
 
                 #######################################################
                 # (2) Generate fake images
