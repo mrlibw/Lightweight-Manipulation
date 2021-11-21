@@ -30,6 +30,8 @@ def sent_loss(cnn_code, rnn_code, labels, class_ids,
             masks.append(mask.reshape((1, -1)))
         masks = np.concatenate(masks, 0)
         masks = torch.BoolTensor(masks)
+        if(len(mask.shape)==1):
+            mask = mask[None,:]
         if cfg.CUDA:
             masks = masks.cuda()
 
