@@ -238,6 +238,7 @@ class condGANTrainer(object):
 
         batch_size = self.batch_size
         nz = cfg.GAN.Z_DIM
+        batch_aug = cfg.BATCH_AUG
 
         gen_iterations = 0
         for epoch in range(start_epoch, self.max_epoch):
@@ -254,8 +255,9 @@ class condGANTrainer(object):
                 imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
                                 wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
                 
-                noise = noise.cuda()
-                word_labels = word_labels.cuda()
+                if cfg.CUDA:
+                    noise = noise.cuda()
+                    word_labels = word_labels.cuda()
 
                 hidden = text_encoder.init_hidden(batch_size)
                 
@@ -271,6 +273,11 @@ class condGANTrainer(object):
                 num_words = words_embs.size(2)
                 if mask.size(1) > num_words:
                     mask = mask[:, :num_words]
+                
+                is_last = (step == self.num_batches-1)
+                is_zero_grad = (step%batch_aug == 0)
+                is_step = (step%batch_aug == batch_aug-1)
+                divider = (self.num_batches%batch_aug) if is_last else batch_aug
 
                 #######################################################
                 # (2) Generate fake images
@@ -290,14 +297,20 @@ class condGANTrainer(object):
                 errD_total = 0
                 D_logs = ''
                 for i in range(len(netsD)):
-                    netsD[i].zero_grad()
+                    if(is_zero_grad):
+                        netsD[i].zero_grad()
                     errD, result = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels,
                                               words_embs, cap_lens, image_encoder, class_ids, w_words_embs, 
                                               wrong_caps_len, wrong_cls_id, word_labels)
                     # backward and update parameters
                     errD.backward(retain_graph=True)
-                    optimizersD[i].step()
+                    
+                    if (is_step or is_last):
+                        for param in netsD[i].parameters():
+                            if param.grad is not None:
+                                param.grad = param.grad/divider
+                        optimizersD[i].step()
                     errD_total += errD
                     D_logs += 'errD%d: %.2f ' % (i, errD)
                     D_logs += "result_%d: %.2f " % (i, result)
@@ -314,8 +327,8 @@ class condGANTrainer(object):
                 step += 1
                 gen_iterations += 1
 
-
-                netG.zero_grad()
+                if (is_zero_grad):
+                    netG.zero_grad()
                 errG_total, G_logs = \
                     generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens,\
@@ -324,7 +337,11 @@ class condGANTrainer(object):
                 errG_total += kl_loss
                 G_logs += 'kl_loss: %.2f ' % kl_loss
                 errG_total.backward()
-                optimizerG.step()
+                if (is_step or is_last):
+                    for param in netG.parameters():
+                        if param.grad is not None:
+                            param.grad = param.grad/divider
+                    optimizerG.step()
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.999).add_(0.001, p.data)
 
