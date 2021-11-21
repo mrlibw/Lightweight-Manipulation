@@ -34,8 +34,9 @@ class condGANTrainer(object):
             self.image_dir = os.path.join(output_dir, 'Image')
             mkdir_p(self.model_dir)
             mkdir_p(self.image_dir)
-
-        torch.cuda.set_device(cfg.GPU_ID)
+        
+        if cfg.CUDA:
+            torch.cuda.set_device(cfg.GPU_ID)
         cudnn.benchmark = True
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
@@ -510,7 +511,8 @@ class condGANTrainer(object):
                 torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
-            text_encoder = text_encoder.cuda()
+            if cfg.CUDA:
+                text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
             # The image encoder
@@ -520,7 +522,8 @@ class condGANTrainer(object):
                 torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
             image_encoder.load_state_dict(state_dict)
             print('Load image encoder from:', img_encoder_path)
-            image_encoder = image_encoder.cuda()
+            if cfg.CUDA:
+                image_encoder = image_encoder.cuda()
             image_encoder.eval()
 
             style_loss = VGGNet()
@@ -529,7 +532,8 @@ class condGANTrainer(object):
 
             print("Load the style loss model")
             style_loss.eval()
-            style_loss = style_loss.cuda()
+            if cfg.CUDA:
+                style_loss = style_loss.cuda()
 
             # The main module
             if cfg.GAN.B_DCGAN:
@@ -542,7 +546,8 @@ class condGANTrainer(object):
                 torch.load(model_dir, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict)
             print('Load G from: ', model_dir)
-            netG.cuda()
+            if cfg.CUDA:
+                netG.cuda()
             netG.eval()
 
             for key in data_dic:
@@ -555,11 +560,13 @@ class condGANTrainer(object):
                 captions = Variable(torch.from_numpy(captions), volatile=True)
                 cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
 
-                captions = captions.cuda()
-                cap_lens = cap_lens.cuda()
+                if cfg.CUDA:
+                    captions = captions.cuda()
+                    cap_lens = cap_lens.cuda()
                 for i in range(1):  
                     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-                    noise = noise.cuda()
+                    if cfg.CUDA:
+                        noise = noise.cuda()
 
                     #######################################################
                     # (1) Extract text and image embeddings
