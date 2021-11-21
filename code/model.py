@@ -345,6 +345,9 @@ class INIT_STAGE_G(nn.Module):
             nn.Linear(nz, ngf * 4 * 4 * 2, bias=False),
             nn.BatchNorm1d(ngf * 4 * 4 * 2),
             GLU())
+        self.fc1batch = nn.Sequential(
+            nn.Linear(nz, ngf * 4 * 4 * 2, bias=False),
+            GLU())
 
         self.upsample1 = upBlock(ngf, ngf // 2)
         self.upsample2 = upBlock(ngf // 2, ngf // 4)
@@ -368,11 +371,10 @@ class INIT_STAGE_G(nn.Module):
         c_z_code = torch.cat((c_code, z_code), 1)
 
         # for testing
-        if not cfg.TRAIN.FLAG and not cfg.B_VALIDATION:
-            cnn_code = cnn_code.repeat(c_z_code.size(0), 1)
-
-        c_z_cnn_code = torch.cat((c_z_code, cnn_code), 1)
-        out_code = self.fc(c_z_cnn_code)
+        if (c_z_cnn_code.shape[0] == 1):
+            out_code = self.fc1batch(c_z_cnn_code)
+        else :
+            out_code = self.fc(c_z_cnn_code)
         out_code = out_code.view(-1, self.gf_dim, 4, 4)
         out_code = self.upsample1(out_code)
         out_code = self.upsample2(out_code)

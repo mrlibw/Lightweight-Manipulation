@@ -238,7 +238,7 @@ class condGANTrainer(object):
 
         batch_size = self.batch_size
         nz = cfg.GAN.Z_DIM
-        batch_aug = cfg.BATCH_AUG
+        batch_aug = cfg.TRAIN.BATCH_AUG
 
         gen_iterations = 0
         for epoch in range(start_epoch, self.max_epoch):
@@ -255,6 +255,10 @@ class condGANTrainer(object):
                 imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
                                 wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
                 
+                if (batch_size ==1):
+                    captions = captions[None,:]
+                    wrong_caps = wrong_caps[None,:]
+
                 if cfg.CUDA:
                     noise = noise.cuda()
                     word_labels = word_labels.cuda()

@@ -14,7 +14,7 @@ TRAIN:
     FLAG: True
     NET_G: '' 
     B_NET_D: True
-    BATCH_SIZE: 4
+    BATCH_SIZE: 1
     BATCH_AUG: 10
     MAX_EPOCH: 600
     SNAPSHOT_INTERVAL: 5
