@@ -371,6 +371,9 @@ class INIT_STAGE_G(nn.Module):
         c_z_code = torch.cat((c_code, z_code), 1)
 
         # for testing
+        if not cfg.TRAIN.FLAG and not cfg.B_VALIDATION:
+            cnn_code = cnn_code.repeat(c_z_code.size(0), 1)
+        c_z_cnn_code = torch.cat((c_z_code, cnn_code), 1)
         if (c_z_cnn_code.shape[0] == 1):
             out_code = self.fc1batch(c_z_cnn_code)
         else :
