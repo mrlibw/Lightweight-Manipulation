@@ -406,7 +406,8 @@ class condGANTrainer(object):
             else:
                 netG = G_NET()
             netG.apply(weights_init)
-            netG.cuda()
+            if cfg.CUDA:
+                netG.cuda()
             netG.eval()
             #
             text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
@@ -414,7 +415,8 @@ class condGANTrainer(object):
                 torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
-            text_encoder = text_encoder.cuda()
+            if cfg.CUDA:
+                text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
             image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
@@ -425,7 +427,8 @@ class condGANTrainer(object):
             for p in image_encoder.parameters():
                 p.requires_grad = False
             print('Load image encoder from:', img_encoder_path)
-            image_encoder = image_encoder.cuda()
+            if cfg.CUDA:
+                image_encoder = image_encoder.cuda()
             image_encoder.eval()
 
 
@@ -435,12 +438,14 @@ class condGANTrainer(object):
 
             print("Load the style loss model")
             style_loss.eval()
-            style_loss = style_loss.cuda()
+            if cfg.CUDA:
+                style_loss = style_loss.cuda()
 
             batch_size = self.batch_size
             nz = cfg.GAN.Z_DIM
             noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-            noise = noise.cuda()
+            if cfg.CUDA:
+                noise = noise.cuda()
 
             model_dir = cfg.TRAIN.NET_G
             state_dict = \
@@ -464,7 +469,8 @@ class condGANTrainer(object):
                     imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
                                 wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
 
-                    noise = noise.cuda()
+                    if cfg.CUDA:
+                        noise = noise.cuda()
 
                     hidden = text_encoder.init_hidden(batch_size)
 
