@@ -396,138 +396,136 @@ class condGANTrainer(object):
 
     def sampling(self, split_dir):
         if cfg.TRAIN.NET_G == '':
-            print('Error: the path for morels is not found!')
+            print('Error: the path for models is not found!')
+            return
+
+        ######################################################
+        # (1) Load Models
+        ######################################################
+        # Loading Generator Model (Model 1)
+        if cfg.GAN.B_DCGAN:
+            netG = G_DCGAN()
         else:
-            if split_dir == 'test':
-                split_dir = 'valid'
-            # Build and load the generator
-            if cfg.GAN.B_DCGAN:
-                netG = G_DCGAN()
-            else:
-                netG = G_NET()
-            netG.apply(weights_init)
-            if cfg.CUDA:
-                netG.cuda()
-            netG.eval()
-            #
-            text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-            state_dict = \
-                torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-            text_encoder.load_state_dict(state_dict)
-            print('Load text encoder from:', cfg.TRAIN.NET_E)
-            if cfg.CUDA:
-                text_encoder = text_encoder.cuda()
-            text_encoder.eval()
+            netG = G_NET()
+        netG.apply(weights_init)
+        if cfg.CUDA:
+            netG.cuda()
+        netG.eval()
+        # Load from file
+        model_dir = cfg.TRAIN.NET_G
+        state_dict = \
+            torch.load(model_dir, map_location=lambda storage, loc: storage)
+        netG.load_state_dict(state_dict)
+        print('Load G from: ', model_dir)
 
-            image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
-            img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
-            state_dict = \
-                torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
-            image_encoder.load_state_dict(state_dict)
-            for p in image_encoder.parameters():
-                p.requires_grad = False
-            print('Load image encoder from:', img_encoder_path)
-            if cfg.CUDA:
-                image_encoder = image_encoder.cuda()
-            image_encoder.eval()
+        # Loading text encoder (Model 2)
+        text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
+        state_dict = \
+            torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+        text_encoder.load_state_dict(state_dict)
+        print('Load text encoder from:', cfg.TRAIN.NET_E)
+        if cfg.CUDA:
+            text_encoder = text_encoder.cuda()
+        text_encoder.eval()
 
+        # Loading Image encoder (Model 3)
+        image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
+        img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
+        state_dict = \
+            torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
+        image_encoder.load_state_dict(state_dict)
+        for p in image_encoder.parameters():
+            p.requires_grad = False
+        print('Load image encoder from:', img_encoder_path)
+        if cfg.CUDA:
+            image_encoder = image_encoder.cuda()
+        image_encoder.eval()
 
-            style_loss = VGGNet()
-            for p in style_loss.parameters():
-                p.requires_grad = False
+        # Loading style encoder (Model 4)
+        style_loss = VGGNet()
+        for p in style_loss.parameters():
+            p.requires_grad = False
+        print("Load the style loss model")
+        style_loss.eval()
+        if cfg.CUDA:
+            style_loss = style_loss.cuda()
 
-            print("Load the style loss model")
-            style_loss.eval()
-            if cfg.CUDA:
-                style_loss = style_loss.cuda()
+        # Some additional steps before the llop
+        # create the path for the generated image
+        if split_dir == 'test':
+            split_dir = 'valid'
+        s_tmp = model_dir[:model_dir.rfind('.pth')]
+        save_dir = '%s/%s' % (s_tmp, split_dir)
+        mkdir_p(save_dir)
+        
+        ######################################################
+        # (2) Generate fake images
+        ######################################################
+        cnt = 0
+        idx = 0 ###
+        batch_size = self.batch_size
+        for _ in range(10):  # (cfg.TEXT.CAPTIONS_PER_IMAGE):
+            for step, data in enumerate(self.data_loader, 0):
+                cnt += batch_size
+                
+                # Preprocess the data
+                imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
+                            wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
+                if cfg.CUDA:
+                    noise = noise.cuda()
+                
+                # Calculate Text embedding
+                hidden = text_encoder.init_hidden(batch_size)
+                words_embs, sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
+                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
+            
+                # Calculate image embeding
+                region_features, cnn_code = image_encoder(imgs[-1])
 
-            batch_size = self.batch_size
-            nz = cfg.GAN.Z_DIM
-            noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-            if cfg.CUDA:
-                noise = noise.cuda()
+                # generate mask
+                mask = (wrong_caps == 0)
+                num_words = words_embs.size(2)
+                if mask.size(1) > num_words:
+                    mask = mask[:, :num_words]
+                
+                # Generate fake images
+                real_img = imgs[-1]
+                vgg_features = style_loss(real_img)[0]
+                fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
+                                                cnn_code, region_features, vgg_features)
+                
+                # printing some status
+                if step % 100 == 0:
+                    print('step: ', step)
+                if idx % 1000 == 0:
+                    print(idx)
+                
+                if (idx>100):
+                    return
+                # Save images
+                for j in range(batch_size):
+                    if not os.path.isdir(save_dir):
+                        print('Make a new folder: ', save_dir)
+                        mkdir_p(save_dir)
 
-            model_dir = cfg.TRAIN.NET_G
-            state_dict = \
-                torch.load(model_dir, map_location=lambda storage, loc: storage)
-            netG.load_state_dict(state_dict)
-            print('Load G from: ', model_dir)
+                    k = -1
+                    im = fake_imgs[k][j].data.cpu().numpy()
+                    im = (im + 1.0) * 127.5
+                    im = im.astype(np.uint8)
+                    im = np.transpose(im, (1, 2, 0))
+                    im = Image.fromarray(im)
+                    fullpath = '%s/%d_fake.png' % (save_dir, idx)
+                    im.save(fullpath)
 
-            # the path to save generated images
-            s_tmp = model_dir[:model_dir.rfind('.pth')]
-            save_dir = '%s/%s' % (s_tmp, split_dir)
-            mkdir_p(save_dir)
+                    im = imgs[k][j].data.cpu().numpy()
+                    im = (im + 1.0) * 127.5
+                    im = im.astype(np.uint8)
+                    im = np.transpose(im, (1, 2, 0))
+                    im = Image.fromarray(im)
+                    fullpath = '%s/%d_real.png' % (save_dir, idx)
+                    idx = idx+1
+                    im.save(fullpath)
 
-            cnt = 0
-            idx = 0 ###
-            for _ in range(10):  # (cfg.TEXT.CAPTIONS_PER_IMAGE):
-                for step, data in enumerate(self.data_loader, 0):
-                    cnt += batch_size
-                    if step % 100 == 0:
-                        print('step: ', step)
-                    
-                    imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
-                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
-
-                    if cfg.CUDA:
-                        noise = noise.cuda()
-
-                    hidden = text_encoder.init_hidden(batch_size)
-
-                    words_embs, sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
-                    words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
-
-                    #w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
-                    #w_words_embs, w_sent_emb = w_words_embs.detach(), w_sent_emb.detach()
-
-                    region_features, cnn_code = image_encoder(imgs[-1])
-
-                    mask = (wrong_caps == 0)
-                    num_words = words_embs.size(2)
-                    if mask.size(1) > num_words:
-                        mask = mask[:, :num_words]
-
-                    #######################################################
-                    # (2) Generate fake images
-                    ######################################################
-                    real_img = imgs[-1]
-                    vgg_features = style_loss(real_img)[0]
-                    fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
-                                                    cnn_code, region_features, vgg_features)
-
-                    if idx % 1000 == 0:
-                        print(idx)
-   
-                    for j in range(batch_size):
-                        s_tmp = '%s/fake' % (save_dir)
-                        folder = s_tmp[:s_tmp.rfind('/')]
-                        if not os.path.isdir(folder):
-                            print('Make a new folder: ', folder)
-                            mkdir_p(folder)
-                        k = -1
-                        im = fake_imgs[k][j].data.cpu().numpy()
-                        im = (im + 1.0) * 127.5
-                        im = im.astype(np.uint8)
-                        im = np.transpose(im, (1, 2, 0))
-                        im = Image.fromarray(im)
-                        fullpath = '%s_s%d.png' % (s_tmp, idx)
-                        im.save(fullpath)
-
-
-                        s_tmp = '%s/real' % (save_dir)
-                        folder = s_tmp[:s_tmp.rfind('/')]
-                        if not os.path.isdir(folder):
-                            print('Make a new folder: ', folder)
-                            mkdir_p(folder)
-
-                        im = imgs[k][j].data.cpu().numpy()
-                        im = (im + 1.0) * 127.5
-                        im = im.astype(np.uint8)
-                        im = np.transpose(im, (1, 2, 0))
-                        im = Image.fromarray(im)
-                        fullpath = '%s_r%d.png' % (s_tmp, idx)
-                        idx = idx+1
-                        im.save(fullpath)
 
     def gen_example(self, data_dic):
         if cfg.TRAIN.NET_G == '':
