@@ -20,6 +20,9 @@ from PIL import Image
 from torch.autograd import Variable
 import numpy.random as random
 
+import warnings
+warnings.filterwarnings("ignore")
+
 dir_path = (os.path.abspath(os.path.join(os.path.realpath(__file__), './.')))
 sys.path.append(dir_path)
 
