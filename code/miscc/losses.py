@@ -118,10 +118,10 @@ def discriminator_loss(netD, real_imgs, fake_imgs, conditions,
                        real_labels, fake_labels, words_embs, cap_lens, image_encoder, class_ids,
                         w_words_embs, wrong_caps_len, wrong_cls_id, word_labels):
     
-    real_features = netD(real_imgs)
+    real_features = netD(real_imgs)  # shape: [10, 512, 4, 4]
     fake_features = netD(fake_imgs.detach())
     
-    cond_real_logits = netD.COND_DNET(real_features, conditions)
+    cond_real_logits = netD.COND_DNET(real_features, conditions)  # shape : [10]
     cond_real_errD = nn.BCELoss()(cond_real_logits, real_labels)
     cond_fake_logits = netD.COND_DNET(fake_features, conditions)
     cond_fake_errD = nn.BCELoss()(cond_fake_logits, fake_labels)

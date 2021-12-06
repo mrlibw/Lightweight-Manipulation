@@ -13,8 +13,12 @@ from torch.nn.modules.utils import _pair, _quadruple
 class SharpDetector:
     def __init__(self):
         # --- initialize filters ---
+        if torch.cuda.is_available():
+            self.device = 'cuda'
+        else:
+            raise ValueError("cuda is unavailable now.")
         self.laplacian_filter = torch.FloatTensor(
-            [[0, 1, 0], [1, -4, 1], [0, 1, 0]]).view(1, 1, 3, 3)
+            [[0, 1, 0], [1, -4, 1], [0, 1, 0]]).view(1, 1, 3, 3).to(self.device)
         
     def get_mask(self, image):
         s = 1
@@ -36,12 +40,12 @@ class SharpDetector:
         # --- sigma is the size of kernel of Blurr filter ---
         abs_image = torch.abs(laplased_image).to(torch.float32)  # convert to absolute values
         abs_image[abs_image < min_abs] = min_abs 
-        print(sigma)
+        # print(sigma)
         blurred_img = self.BlurLayer(abs_image, k_size=sigma)
         return blurred_img
 
-    def BlurLayer(self, img, k_size=5, s=1, pad=1):
-        _blur_filter = torch.ones([k_size, k_size])
+    def BlurLayer(self, img, k_size=5, s=1, pad=2):
+        _blur_filter = torch.ones([k_size, k_size]).to(self.device)
         blur_filter = _blur_filter.view(1,1,k_size, k_size) / (k_size**2)
         # gray = getGrayImage(img)
         img_blur = torch.nn.functional.conv2d(input=img,

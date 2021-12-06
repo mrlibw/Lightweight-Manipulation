@@ -25,6 +25,7 @@ import os
 import time
 import numpy as np
 import sys
+from pdb import set_trace as db
 
 # ################# Text to image task############################ #
 class condGANTrainer(object):
@@ -46,7 +47,7 @@ class condGANTrainer(object):
         self.n_words = n_words
         self.ixtoword = ixtoword
         self.data_loader = data_loader
-        self.num_batches = len(self.data_loader)
+        self.num_batches = len(self.data_loader)  # n_images / batch_size ??
 
     def build_models(self):
         # ###################encoders######################################## #
@@ -255,8 +256,7 @@ class condGANTrainer(object):
                 ######################################################
                 data = data_iter.next()
                 imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
-                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
-                
+                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)  # imgs.shape = [10, 3, 256, 256]
                 if (batch_size ==1):
                     captions = captions[None,:]
                     wrong_caps = wrong_caps[None,:]
@@ -265,18 +265,18 @@ class condGANTrainer(object):
                     noise = noise.cuda()
                     word_labels = word_labels.cuda()
 
-                hidden = text_encoder.init_hidden(batch_size)
+                hidden = text_encoder.init_hidden(batch_size)  # tuple, length 2, ([2, 10, 128], [2, 10, 128])
                 
-                words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)
-                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
+                words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)  # cap_lens.size = 10, captions.shape = [10, 18]
+                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()  # words_embs.shape = [10, 256, 18], sent_embs.shape = [10, 256]
 
-                w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
+                w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)  # w_ is for wrong
                 w_words_embs, w_sent_emb = w_words_embs.detach(), w_sent_emb.detach()
 
                 region_features, cnn_code = image_encoder(imgs[len(netsD)-1])
 
-                mask = (captions == 0)
-                num_words = words_embs.size(2)
+                mask = (captions == 0)  # mask.shape = [10, 18]
+                num_words = words_embs.size(2)  # num_words = 18
                 if mask.size(1) > num_words:
                     mask = mask[:, :num_words]
                 
@@ -293,7 +293,7 @@ class condGANTrainer(object):
                 real_img = imgs[-1]
                 vgg_features = style_loss(real_img)[0]
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
-                                                    cnn_code, region_features, vgg_features)
+                                                    cnn_code, region_features, vgg_features)  # fake_imgs.shpae = [10, 3, 256, 256]
                 
                 # calculate the number of parameters in the generator
                 #pytorch_total_params = sum(p.numel() for p in netG.parameters()) 
@@ -310,7 +310,7 @@ class condGANTrainer(object):
                     errD, result = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels,
                                               words_embs, cap_lens, image_encoder, class_ids, w_words_embs, 
-                                              wrong_caps_len, wrong_cls_id, word_labels)
+                                              wrong_caps_len, wrong_cls_id, word_labels)  # imgs[0].shape = [10, 3, 256, 256]
                     # backward and update parameters
                     errD.backward(retain_graph=True)
                     
