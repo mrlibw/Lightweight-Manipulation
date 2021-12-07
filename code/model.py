@@ -674,7 +674,8 @@ class D_NET256(nn.Module):
 
     def forward(self, x_var):  # x_var.shape: [10, 3, 256, 256]
         # x_code16 = self.img_code_s16(x_var)  # feed both x and mask
-        sharp_mask = self.sharp_detector.get_mask(x_var)
+        with torch.no_grad():
+            sharp_mask = self.sharp_detector.get_mask(x_var)
         x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
         x_code8 = self.img_code_s32(x_code16)
         x_code4 = self.img_code_s64(x_code8)
