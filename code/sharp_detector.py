@@ -29,6 +29,8 @@ class SharpDetector:
                                         stride=s,
                                         padding=pad)
         out = self.blurring(img_lap)
+        # thresholding and mask
+        out = self.thresholding(out)
         return out 
 
     def getGrayImage(self, rgbImg):
@@ -54,6 +56,15 @@ class SharpDetector:
                                             padding=pad)
 
         return img_blur
+    
+    def thresholding(self, img):
+        bs, ch, h, w = img.shape
+        _var = img.var(dim=(2,3))
+        _var = _var.view(bs, 1, 1, 1)
+        var_tensor = _var.repeat_interleave(dim=2, 
+                            repeats=h).repeat_interleave(dim=3, repeats=w)
+        mask = (img > var_tensor)
+        return mask
 
 if __name__=="__main__":
     # --- 画像のロード ---
@@ -69,11 +80,13 @@ if __name__=="__main__":
     # ---- バッチ方向にrepeat ----
     img = torch.repeat_interleave(img, dim=0, repeats=3)
     print("img shape: ", img.shape)
+    # --- to GPU ---
+    img = img.to('cuda')
 
     model = SharpDetector()
     out = model.get_mask(img)
 
-    np_out = out.detach().numpy()
+    np_out = out.cpu().detach().numpy()
     plt.imshow(np_out[0, 0,:,:], cmap='gray')
     plt.savefig('./blurred_test.png')
     plt.clf()
