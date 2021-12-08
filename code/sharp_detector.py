@@ -59,7 +59,7 @@ class SharpDetector:
     
     def thresholding(self, img):
         bs, ch, h, w = img.shape
-        _var = img.var(dim=(2,3))
+        _var = img.mean(dim=(2,3))
         _var = _var.view(bs, 1, 1, 1)
         var_tensor = _var.repeat_interleave(dim=2, 
                             repeats=h).repeat_interleave(dim=3, repeats=w)
