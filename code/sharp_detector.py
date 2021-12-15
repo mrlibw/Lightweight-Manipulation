@@ -9,6 +9,7 @@ import math
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair, _quadruple
+from pdb import set_trace as db
 
 class SharpDetector:
     def __init__(self):
@@ -63,7 +64,8 @@ class SharpDetector:
         _var = _var.view(bs, 1, 1, 1)
         var_tensor = _var.repeat_interleave(dim=2, 
                             repeats=h).repeat_interleave(dim=3, repeats=w)
-        mask = (img > var_tensor)
+        mask = (img > var_tensor).type(torch.FloatTensor).to('cuda')
+        # db()
         return mask
 
 if __name__=="__main__":
