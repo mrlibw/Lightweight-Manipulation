@@ -566,10 +566,12 @@ def downBlock(in_planes, out_planes):
 
 # Downsale the spatial size by a factor of 16
 def encode_image_by_16times(ndf):
+    input_ch = 4 if cfg.TRAIN.USE_SHARP_REGION_MASK else 3
     encode_img = nn.Sequential(
         # --> state size. ndf x in_size/2 x in_size/2
         ### nn.Conv2d(3, ndf, 4, 2, 1, bias=False),  # commented out by takumi
-        nn.Conv2d(4, ndf, 4, 2, 1, bias=False),  # modified from 3 to 4 (= 3 + 1)
+        ### nn.Conv2d(4, ndf, 4, 2, 1, bias=False),  # modified from 3 to 4 (= 3 + 1)
+        nn.Conv2d(input_ch, ndf, 4, 2, 1, bias=False),  # modified from 3 to 4 (= 3 + 1)
         nn.LeakyReLU(0.2, inplace=True),
         # --> state size 2ndf x x in_size/4 x in_size/4
         nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
@@ -674,9 +676,12 @@ class D_NET256(nn.Module):
 
     def forward(self, x_var):  # x_var.shape: [10, 3, 256, 256]
         # x_code16 = self.img_code_s16(x_var)  # feed both x and mask
-        with torch.no_grad():
+        if cfg.TRAIN.USE_SHARP_REGION_MASK:
+            # with torch.no_grad():
             sharp_mask = self.sharp_detector.get_mask(x_var)
-        x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
+            x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
+        else:
+            x_code16 = self.img_code_s16(x_var)  # feed both x and mask
         x_code8 = self.img_code_s32(x_code16)
         x_code4 = self.img_code_s64(x_code8)
         x_code4 = self.img_code_s64_1(x_code4)
