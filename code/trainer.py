@@ -33,6 +33,7 @@ from compute_fid import FidCalculater
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword):
         if cfg.TRAIN.FLAG:
+            self.output_dir =output_dir
             self.model_dir = os.path.join(output_dir, 'Model')
             self.image_dir = os.path.join(output_dir, 'Image')
             mkdir_p(self.model_dir)
@@ -393,7 +394,9 @@ class condGANTrainer(object):
             # --- calculate FID ---
             print("starting to calculate FID")
             fid_value = self.fid_calc.calculate_fid()
-            print("FID valud: ", fid_value)
+            print("FID value: ", fid_value)
+            with open(self.output_dir + "/FID_score.txt", 'w') as f:
+                f.write("FID value: {}".format(fid_value))
 
         self.save_model(netG, avg_param_G, netsD, self.max_epoch)
 
