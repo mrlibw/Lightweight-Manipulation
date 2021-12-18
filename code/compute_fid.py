@@ -98,12 +98,12 @@ class FidCalculater:
         self.sigma_org = np.cov(self.pred_arr_org, rowvar=False)
         self.sigma_fake = np.cov(self.pred_arr_fake, rowvar=False)
         
-        fid_value = self.calculate_frechet_distance(self.mu_org, self.mu_fake, \
-            self.sigma_org, self.sigma_fake)
+        fid_value = self.calculate_frechet_distance(self.mu_org, \
+            self.sigma_org, self.mu_fake, self.sigma_fake)
         return fid_value
 
 
-    def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
+    def calculate_frechet_distance(self, mu1, sigma1, mu2, sigma2, eps=1e-6):
         """Numpy implementation of the Frechet Distance.
         The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
         and X_2 ~ N(mu_2, C_2) is

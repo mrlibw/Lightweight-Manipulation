@@ -25,7 +25,9 @@ import os
 import time
 import numpy as np
 import sys
+# 
 from pdb import set_trace as db
+from compute_fid import FidCalculater
 
 # ################# Text to image task############################ #
 class condGANTrainer(object):
@@ -48,6 +50,8 @@ class condGANTrainer(object):
         self.ixtoword = ixtoword
         self.data_loader = data_loader
         self.num_batches = len(self.data_loader)  # n_images / batch_size ??
+
+        self.fid_calc = FidCalculater(n_file=self.data_loader.dataset.number_example)
 
     def build_models(self):
         # ###################encoders######################################## #
@@ -298,6 +302,14 @@ class condGANTrainer(object):
                 # calculate the number of parameters in the generator
                 #pytorch_total_params = sum(p.numel() for p in netG.parameters()) 
                 #print(pytorch_total_params, " the number of parameters in generator")
+
+                # =================================================
+                # (2.1) Compute FID in the final epoch
+                # =================================================
+                if epoch == self.max_epoch - 1:
+                    assert real_img.shape == fake_imgs[0].shape, "real image and fake image have different shape."
+                    self.fid_calc.accumulate_pred_from_batch(real_img, fake_imgs[0])
+
                 
                 #######################################################
                 # (3) Update D network
@@ -377,6 +389,11 @@ class condGANTrainer(object):
 
             if epoch % cfg.TRAIN.SNAPSHOT_INTERVAL == 0:  # and epoch != 0:
                 self.save_model(netG, avg_param_G, netsD, epoch)
+
+            # --- calculate FID ---
+            print("starting to calculate FID")
+            fid_value = self.fid_calc.calculate_fid()
+            print("FID valud: ", fid_value)
 
         self.save_model(netG, avg_param_G, netsD, self.max_epoch)
 
