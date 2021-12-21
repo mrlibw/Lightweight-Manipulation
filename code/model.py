@@ -674,12 +674,17 @@ class D_NET256(nn.Module):
         self.COND_DNET = D_GET_LOGITS(ndf, nef, bcondition=True)
         self.sharp_detector = SharpDetector()
 
-    def forward(self, x_var):  # x_var.shape: [10, 3, 256, 256]
+    def forward(self, x_var, epoch):  # x_var.shape: [10, 3, 256, 256]
         # x_code16 = self.img_code_s16(x_var)  # feed both x and mask
         if cfg.TRAIN.USE_SHARP_REGION_MASK:
-            # with torch.no_grad():
-            sharp_mask = self.sharp_detector.get_mask(x_var)
-            x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
+            if epoch > 50:
+                # with torch.no_grad():
+                sharp_mask = self.sharp_detector.get_mask(x_var)
+                x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
+            else:
+                bs, _, h, w = x_var.shape
+                dummy_mask = torch.zeros(bs, 1, h, w).to('cuda')
+                x_code16 = self.img_code_s16(torch.cat([x_var, dummy_mask], dim=1))  # feed both x and mask
         else:
             x_code16 = self.img_code_s16(x_var)  # feed both x and mask
         x_code8 = self.img_code_s32(x_code16)

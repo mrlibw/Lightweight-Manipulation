@@ -50,6 +50,8 @@ except ImportError:
         return x
 
 from pytorch_fid.inception import InceptionV3
+from pdb import set_trace as db
+
 
 class FidCalculater:
     def __init__(self, n_file):
@@ -82,9 +84,11 @@ class FidCalculater:
 
         pred_org = pred_org.squeeze(3).squeeze(2).cpu().numpy()
         pred_fake = pred_fake.squeeze(3).squeeze(2).cpu().numpy()
-
-        self.pred_arr_org[self.start_idx:self.start_idx + pred_org.shape[0]] = pred_org
-        self.pred_arr_fake[self.start_idx:self.start_idx + pred_fake.shape[0]] = pred_fake
+        try:
+            self.pred_arr_org[self.start_idx:self.start_idx + pred_org.shape[0]] = pred_org
+            self.pred_arr_fake[self.start_idx:self.start_idx + pred_fake.shape[0]] = pred_fake
+        except:
+            db()
 
         self.start_idx = self.start_idx + pred_org.shape[0]
 
@@ -100,6 +104,7 @@ class FidCalculater:
         
         fid_value = self.calculate_frechet_distance(self.mu_org, \
             self.sigma_org, self.mu_fake, self.sigma_fake)
+        self.start_idx = 0
         return fid_value
 
 

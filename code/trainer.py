@@ -28,6 +28,7 @@ import sys
 # 
 from pdb import set_trace as db
 from compute_fid import FidCalculater
+# from sharp_detector import blurring
 
 # ################# Text to image task############################ #
 class condGANTrainer(object):
@@ -249,6 +250,7 @@ class condGANTrainer(object):
         batch_aug = cfg.TRAIN.BATCH_AUG
 
         gen_iterations = 0
+        lst_fid_value = []
         for epoch in range(start_epoch, self.max_epoch):
             start_t = time.time()
 
@@ -304,11 +306,13 @@ class condGANTrainer(object):
                 #pytorch_total_params = sum(p.numel() for p in netG.parameters()) 
                 #print(pytorch_total_params, " the number of parameters in generator")
 
+                
+
                 # =================================================
-                # (2.1) Compute FID in the final epoch
+                # (2.2) Compute FID in the final epoch
                 # =================================================
-                if epoch == self.max_epoch - 1:
-                    assert real_img.shape == fake_imgs[0].shape, "real image and fake image have different shape."
+                if (epoch % 10 == 9) | (epoch == 0):
+                    assert real_img.shape == fake_imgs[0].shape, "Real image and fake image have different shape."
                     self.fid_calc.accumulate_pred_from_batch(real_img, fake_imgs[0])
 
                 
@@ -323,7 +327,7 @@ class condGANTrainer(object):
                     errD, result = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels,
                                               words_embs, cap_lens, image_encoder, class_ids, w_words_embs, 
-                                              wrong_caps_len, wrong_cls_id, word_labels)  # imgs[0].shape = [10, 3, 256, 256]
+                                              wrong_caps_len, wrong_cls_id, word_labels, epoch, cfg)  # imgs[0].shape = [10, 3, 256, 256]
                     # backward and update parameters
                     errD.backward(retain_graph=True)
                     
@@ -353,7 +357,7 @@ class condGANTrainer(object):
                 errG_total, G_logs = \
                     generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens,\
-                                    class_ids, style_loss, imgs)
+                                    class_ids, style_loss, imgs, epoch)
                 kl_loss = KL_loss(mu, logvar)
                 errG_total += kl_loss
                 G_logs += 'kl_loss: %.2f ' % kl_loss
@@ -391,12 +395,20 @@ class condGANTrainer(object):
             if epoch % cfg.TRAIN.SNAPSHOT_INTERVAL == 0:  # and epoch != 0:
                 self.save_model(netG, avg_param_G, netsD, epoch)
 
-            # --- calculate FID ---
-            print("starting to calculate FID")
-            fid_value = self.fid_calc.calculate_fid()
-            print("FID value: ", fid_value)
-            with open(self.output_dir + "/FID_score.txt", 'w') as f:
-                f.write("FID value: {}".format(fid_value))
+            if (epoch % 10 == 9) | (epoch == 0):
+                # --- calculate FID ---
+                print("starting to calculate FID")
+                fid_value = self.fid_calc.calculate_fid()
+                print("FID value: ", fid_value)
+                lst_fid_value.append(fid_value)
+
+        with open(self.output_dir + "/memo.txt", 'w') as f:
+            f.write("FID values: {}\n".format(lst_fid_value))
+            f.write("batch aug: {}\n".format(cfg.TRAIN.BATCH_AUG) )
+            f.write("use_sharp_region_mask: {}\n".format(cfg.TRAIN.USE_SHARP_REGION_MASK))
+            f.write("use_blur_real_image: {}\n".format(cfg.TRAIN.USE_BLUR_REAL_IMAGE))
+            f.write("number of max epoch: {}\n".format(cfg.TRAIN.MAX_EPOCH))
+            f.write("COMMENTS:\n feed black mask image until epoch reaches 50\n")  # some comments
 
         self.save_model(netG, avg_param_G, netsD, self.max_epoch)
 
