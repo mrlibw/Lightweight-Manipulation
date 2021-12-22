@@ -134,7 +134,7 @@ def norm(img, rng=(0, 255)):
     return (img - r_min) / (r_max - r_min) * (t_max-t_min) + t_min
   
 
-def hist_batch_mask(real_img, fake_img, segment == False):
+def hist_batch_mask(real_img, fake_img, segment = False):
   #Compute the histogram matched real image
   hist_real = matching_histogram(real_img, fake_img, min = 0.0, max = 255.0, int_out=True)
   #Gaussian filter
