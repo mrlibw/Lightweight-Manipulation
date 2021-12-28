@@ -240,6 +240,11 @@ class condGANTrainer(object):
         text_encoder, image_encoder, netG, netsD, start_epoch, style_loss = self.build_models()
         avg_param_G = copy_G_params(netG)
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
+        
+        if cfg.MASK_HIST == False:
+            fcn = models.segmentation.fcn_resnet101(pretrained=True).eval()
+            fcn.to('cuda')
+            
         real_labels, fake_labels, match_labels = self.prepare_labels()
 
         batch_size = self.batch_size
@@ -292,7 +297,7 @@ class condGANTrainer(object):
                 if cfg.MASK_HIST:
                     mask_img = hist_batch_mask(real_img, fake_img)
                 else:
-                    mask_img = get_batch_mask(real_img, show=False)
+                    mask_img = get_batch_mask(real_img, model=fcn, show=False)
                 
                 
                 # calculate the number of parameters in the generator
