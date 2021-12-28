@@ -7,13 +7,12 @@ import numpy as np
 import pickle as pkl
 import os
 
-def get_batch_mask(real_batch, show=False):
+def get_batch_mask(real_batch, model, show=False):
 
     real_batch = (real_batch + 1.0) * 127.5
     real_batch = real_batch / 255.
-    
-    fcn = models.segmentation.fcn_resnet101(pretrained=True).eval()
-    fcn.to('cuda')
+
+    fcn = model
     
     trf = T.Compose([T.Resize(224),
                      T.Normalize(mean = [0.485, 0.456, 0.406], 
