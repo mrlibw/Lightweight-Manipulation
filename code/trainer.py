@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
+from torchvision import models
 
 from PIL import Image
 
@@ -28,6 +29,8 @@ import sys
 
 from mask import get_batch_mask
 import matplotlib.pyplot as plt
+
+from mask import get_batch_mask
 
 
 # ################# Text to image task############################ #
@@ -286,31 +289,6 @@ class condGANTrainer(object):
 
                 fake_img = fake_imgs[-1]
 
-                # mask_img = []
-                # for index in range(0, real_img.size()[0]):
-                #     im = real_img[index].data.cpu().numpy()
-                #     im = (im + 1.0) * 127.5
-                #     im = im.astype(np.uint8)
-                #     real = np.transpose(im, (1, 2, 0))
-                #     # im = Image.fromarray(real)
-                #     # im.save("TEST/real_"+str(index)+'.png')
-
-                #     im = fake_img[index].data.cpu().numpy()
-                #     im = (im + 1.0) * 127.5
-                #     im = im.astype(np.uint8)
-                #     fake = np.transpose(im, (1, 2, 0))
-                #     # im = Image.fromarray(fake)
-                #     # im.save("TEST/fake_"+str(index)+'.png')
-
-                #     mask_rf = get_img_mask(real, fake)
-                #     # print(mask.min(), mask.max())
-                #     # plt.imsave("TEST/mask_"+str(index)+'.png', mask, cmap='gray')
-                #     mask_img.append(mask_rf.reshape(1, mask_rf.shape[0], mask_rf.shape[1]))
-                
-                # mask_img = np.array(mask_img)
-                # mask_img = torch.from_numpy(mask_img).cuda()
-                #print(mask_img.size())
-
                 mask_img = get_batch_mask(real_img, show=False)
                 
                 
@@ -358,9 +336,6 @@ class condGANTrainer(object):
                 errG_total += kl_loss
 
                 mask_loss = M_loss(real_img, fake_img, mask_img)
-                # print('#'*25)
-                # print('M_LOSS')
-                # print(mask_loss)
                 errG_total += mask_loss
 
                 G_logs += 'kl_loss: %.2f ' % kl_loss
