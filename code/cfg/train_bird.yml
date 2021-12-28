@@ -21,7 +21,7 @@ TRAIN:
     DISCRIMINATOR_LR: 0.0002
     GENERATOR_LR: 0.0002
     USE_SHARP_REGION_MASK: False  # True
-    USE_BLUR_REAL_IMAGE: True  # False
+    USE_BLUR_REAL_IMAGE: False  # True  # False
     #
     NET_E: '../DAMSMencoders/bird/text_encoder.pth'
     SMOOTH:

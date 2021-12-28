@@ -5,14 +5,17 @@ DATA_DIR: '../data/birds'
 GPU_ID: '3'
 WORKERS: 1
 
-B_VALIDATION: False # True
+B_VALIDATION: True  # False # True
 TREE:
     BRANCH_NUM: 3
 
 
 TRAIN:
     FLAG: False
-    NET_G: '../models/lightweight_bird.pth'
+    # NET_G: '../models/lightweight_bird.pth'  # should be changed accordingly
+    # NET_G: '/home/isi/prog/Lightweight-Manipulation/output/birds_lightweight_2021_12_21_18_59_04(blur_real_image)/Model/netG_epoch_100.pth'  # should be changed accordingly
+    # NET_G: '/home/isi/prog/Lightweight-Manipulation/output/birds_lightweight_2021_12_16_23_17_42(batchaug1_minimum result))/Model/netG_epoch_100.pth'
+    NET_G: '/home/isi/prog/Lightweight-Manipulation/output/birds_lightweight_2021_12_27_10_05_35/Model/netG_epoch_100.pth'
     B_NET_D: False
     BATCH_SIZE: 2
     NET_E: '../DAMSMencoders/bird/text_encoder.pth'

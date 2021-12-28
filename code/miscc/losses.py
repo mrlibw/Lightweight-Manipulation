@@ -11,6 +11,8 @@ from torch.autograd import Variable
 
 
 def blurring(img, k_size=5, s=1, pad=2):
+    k_size = 9  # 7
+    pad= 4  # 3
     _blur_filter = torch.ones([3, 3, k_size, k_size]).to('cuda')
     blur_filter = _blur_filter.view(3, 3, k_size, k_size) / (k_size**2 * 3)  # first element is output ch. https://pytorch.org/docs/stable/generated/torch.nn.functional.conv2d.html
     # gray = getGrayImage(img)
