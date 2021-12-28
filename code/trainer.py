@@ -241,7 +241,7 @@ class condGANTrainer(object):
         avg_param_G = copy_G_params(netG)
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
         
-        if cfg.MASK_HIST == False:
+        if cfg.TRAIN.MASK_HIST == False:
             fcn = models.segmentation.fcn_resnet101(pretrained=True).eval()
             fcn.to('cuda')
             
@@ -294,7 +294,7 @@ class condGANTrainer(object):
 
                 fake_img = fake_imgs[-1]
                 
-                if cfg.MASK_HIST:
+                if cfg.TRAIN.MASK_HIST:
                     mask_img = hist_batch_mask(real_img, fake_img)
                 else:
                     mask_img = get_batch_mask(real_img, model=fcn, show=False)
