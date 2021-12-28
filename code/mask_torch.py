@@ -56,32 +56,32 @@ def norm(img, rng=(0, 255)):
     return (img - r_min) / (r_max - r_min) * (t_max-t_min) + t_min
   
 def hist_batch_mask(real_img, fake_img):
-  #Compute the histogram matched real image
-  hist_real = matching_histogram(real_img, fake_img, min = 0.0, max = 255.0, int_out=True)
-  #Gaussian filter
-  real_batch = T.GaussianBlur(kernel_size = 5, sigma=1)(hist_real)
-  fake_batch = T.GaussianBlur(kernel_size = 5, sigma=1)(fake_img)
-  
-  #Compute difference
-  masked_batch = torch.abs(torch.subtract(real_batch, fake_batch))
-  # remove large (white) values by setting them to 0
-  masked_batch[masked_batch > 160] = 0
-  # keep large (white) values by setting anything below to 0
-  masked_batch = masked_batch > 32.5
-  # add the the three channels
-  masked_batch = masked_batch.sum(1)
-  # reshape after the dropped dimension when summing
-  masked_batch = torch.reshape(masked_batch, (masked_batch.size()[0], 1, masked_batch.size()[1], masked_batch.size()[2]))
-  # set to 1 any values above 0
-  masked_batch = masked_batch > 0
-  # cast to int and apply erosion
-  masked_batch = erosion(masked_batch.long(), torch.ones(2, 2).cuda()) # 3, 3
-  # apply dilation
-  masked_batch = dilation(masked_batch, torch.ones(7, 7).cuda()) # 7, 7
-  # invert mask
-  masked_batch = 1 - masked_batch
-  
-  return masked_batch
+    #Compute the histogram matched real image
+    hist_real = matching_histogram(real_img, fake_img, min = 0.0, max = 255.0, int_out=True)
+    #Gaussian filter
+    real_batch = T.GaussianBlur(kernel_size = 5, sigma=1)(hist_real)
+    fake_batch = T.GaussianBlur(kernel_size = 5, sigma=1)(fake_img)
+
+    #Compute difference
+    masked_batch = torch.abs(torch.subtract(real_batch, fake_batch))
+    # remove large (white) values by setting them to 0
+    masked_batch[masked_batch > 160] = 0
+    # keep large (white) values by setting anything below to 0
+    masked_batch = masked_batch > 32.5
+    # add the the three channels
+    masked_batch = masked_batch.sum(1)
+    # reshape after the dropped dimension when summing
+    masked_batch = torch.reshape(masked_batch, (masked_batch.size()[0], 1, masked_batch.size()[1], masked_batch.size()[2]))
+    # set to 1 any values above 0
+    masked_batch = masked_batch > 0
+    # cast to int and apply erosion
+    masked_batch = erosion(masked_batch.long(), torch.ones(2, 2).cuda()) # 3, 3
+    # apply dilation
+    masked_batch = dilation(masked_batch, torch.ones(7, 7).cuda()) # 7, 7
+    # invert mask
+    masked_batch = 1 - masked_batch
+    
+    return masked_batch
 
 
 
