@@ -217,6 +217,12 @@ def KL_loss(mu, logvar):
     KLD = torch.mean(KLD_element).mul_(-0.5)
     return KLD
 
+##################################################################
+
+def M_loss(real, fake, mask):
+    m_loss = torch.mean((torch.abs(real - fake))*mask) * 25
+    return m_loss
+
 
 ##################################################################
 
