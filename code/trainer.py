@@ -27,10 +27,10 @@ import time
 import numpy as np
 import sys
 
-from mask import get_batch_mask
 import matplotlib.pyplot as plt
 
 from mask_fcn import get_batch_mask
+from mask_torch import hist_batch_mask
 
 
 # ################# Text to image task############################ #
@@ -288,8 +288,11 @@ class condGANTrainer(object):
                                                     cnn_code, region_features, vgg_features)
 
                 fake_img = fake_imgs[-1]
-
-                mask_img = get_batch_mask(real_img, show=False)
+                
+                if cfg.MASK_HIST:
+                    mask_img = hist_batch_mask(real_img, fake_img)
+                else:
+                    mask_img = get_batch_mask(real_img, show=False)
                 
                 
                 # calculate the number of parameters in the generator
