@@ -26,6 +26,10 @@ import os
 import time
 import numpy as np
 import sys
+# 
+from pdb import set_trace as db
+from compute_fid import FidCalculater
+# from sharp_detector import blurring
 
 import matplotlib.pyplot as plt
 
@@ -37,6 +41,7 @@ from mask_torch import hist_batch_mask
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword):
         if cfg.TRAIN.FLAG:
+            self.output_dir =output_dir
             self.model_dir = os.path.join(output_dir, 'Model')
             self.image_dir = os.path.join(output_dir, 'Image')
             mkdir_p(self.model_dir)
@@ -52,7 +57,9 @@ class condGANTrainer(object):
         self.n_words = n_words
         self.ixtoword = ixtoword
         self.data_loader = data_loader
-        self.num_batches = len(self.data_loader)
+        self.num_batches = len(self.data_loader)  # n_images / batch_size ??
+
+        self.fid_calc = FidCalculater(n_file=self.data_loader.dataset.number_example)
 
     def build_models(self):
         # ###################encoders######################################## #
@@ -251,6 +258,7 @@ class condGANTrainer(object):
         nz = cfg.GAN.Z_DIM
 
         gen_iterations = 0
+        lst_fid_value = []
         for epoch in range(start_epoch, self.max_epoch):
             start_t = time.time()
 
@@ -263,23 +271,27 @@ class condGANTrainer(object):
                 ######################################################
                 data = data_iter.next()
                 imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
-                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
-                
-                noise = noise.cuda()
-                word_labels = word_labels.cuda()
+                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)  # imgs.shape = [10, 3, 256, 256]
+                if (batch_size ==1):
+                    captions = captions[None,:]
+                    wrong_caps = wrong_caps[None,:]
 
-                hidden = text_encoder.init_hidden(batch_size)
-                
-                words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)
-                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
+                if cfg.CUDA:
+                    noise = noise.cuda()
+                    word_labels = word_labels.cuda()
 
-                w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
+                hidden = text_encoder.init_hidden(batch_size)  # tuple, length 2, ([2, 10, 128], [2, 10, 128])
+                
+                words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)  # cap_lens.size = 10, captions.shape = [10, 18]
+                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()  # words_embs.shape = [10, 256, 18], sent_embs.shape = [10, 256]
+
+                w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)  # w_ is for wrong
                 w_words_embs, w_sent_emb = w_words_embs.detach(), w_sent_emb.detach()
 
                 region_features, cnn_code = image_encoder(imgs[len(netsD)-1])
 
-                mask = (captions == 0)
-                num_words = words_embs.size(2)
+                mask = (captions == 0)  # mask.shape = [10, 18]
+                num_words = words_embs.size(2)  # num_words = 18
                 if mask.size(1) > num_words:
                     mask = mask[:, :num_words]
 
@@ -303,6 +315,16 @@ class condGANTrainer(object):
                 # calculate the number of parameters in the generator
                 #pytorch_total_params = sum(p.numel() for p in netG.parameters()) 
                 #print(pytorch_total_params, " the number of parameters in generator")
+
+                
+
+                # =================================================
+                # (2.2) Compute FID in the final epoch
+                # =================================================
+                if (epoch % 10 == 9) | (epoch == 0):
+                    assert real_img.shape == fake_imgs[0].shape, "Real image and fake image have different shape."
+                    self.fid_calc.accumulate_pred_from_batch(real_img, fake_imgs[0])
+
                 
                 #######################################################
                 # (3) Update D network
@@ -314,7 +336,7 @@ class condGANTrainer(object):
                     errD, result = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels,
                                               words_embs, cap_lens, image_encoder, class_ids, w_words_embs, 
-                                              wrong_caps_len, wrong_cls_id, word_labels)
+                                              wrong_caps_len, wrong_cls_id, word_labels, epoch, cfg)  # imgs[0].shape = [10, 3, 256, 256]
                     # backward and update parameters
                     errD.backward(retain_graph=True)
                     optimizersD[i].step()
@@ -339,7 +361,7 @@ class condGANTrainer(object):
                 errG_total, G_logs = \
                     generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens,\
-                                    class_ids, style_loss, imgs)
+                                    class_ids, style_loss, imgs, epoch)
                 kl_loss = KL_loss(mu, logvar)
                 errG_total += kl_loss
 
@@ -377,6 +399,21 @@ class condGANTrainer(object):
 
             if epoch % cfg.TRAIN.SNAPSHOT_INTERVAL == 0:  # and epoch != 0:
                 self.save_model(netG, avg_param_G, netsD, epoch)
+
+            if (epoch % 10 == 9) | (epoch == 0):
+                # --- calculate FID ---
+                print("starting to calculate FID")
+                fid_value = self.fid_calc.calculate_fid()
+                print("FID value: ", fid_value)
+                lst_fid_value.append(fid_value)
+
+        with open(self.output_dir + "/memo.txt", 'w') as f:
+            f.write("FID values: {}\n".format(lst_fid_value))
+            f.write("batch aug: {}\n".format(cfg.TRAIN.BATCH_AUG) )
+            f.write("use_sharp_region_mask: {}\n".format(cfg.TRAIN.USE_SHARP_REGION_MASK))
+            f.write("use_blur_real_image: {}\n".format(cfg.TRAIN.USE_BLUR_REAL_IMAGE))
+            f.write("number of max epoch: {}\n".format(cfg.TRAIN.MAX_EPOCH))
+            f.write("COMMENTS:\n blur kernel size 9 pad size 4. Now test run after merging.\n")  # some comments
 
         self.save_model(netG, avg_param_G, netsD, self.max_epoch)
 

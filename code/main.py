@@ -20,16 +20,20 @@ from PIL import Image
 from torch.autograd import Variable
 import numpy.random as random
 
+from pdb import set_trace as db
+import warnings
+warnings.filterwarnings("ignore")
+
 dir_path = (os.path.abspath(os.path.join(os.path.realpath(__file__), './.')))
 sys.path.append(dir_path)
 
-
+print("current workind dir is: ", os.getcwd())
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a main module of the Lightweight network')
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='cfg/train_bird.yml', type=str)
-    parser.add_argument('--gpu', dest='gpu_id', type=int, default=-1)
+    parser.add_argument('--gpu', dest='gpu_id', type=int, default=0)
     parser.add_argument('--data_dir', dest='data_dir', type=str, default='')
     parser.add_argument('--manualSeed', type=int, help='manual seed')
     args = parser.parse_args()

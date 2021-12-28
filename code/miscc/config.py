@@ -32,6 +32,8 @@ __C.TRAIN.MAX_EPOCH = 600
 __C.TRAIN.SNAPSHOT_INTERVAL = 2000
 __C.TRAIN.DISCRIMINATOR_LR = 2e-4
 __C.TRAIN.GENERATOR_LR = 2e-4
+__C.TRAIN.USE_SHARP_REGION_MASK = True
+__C.TRAIN.USE_BLUR_REAL_IMAGE = True
 __C.TRAIN.ENCODER_LR = 2e-4
 __C.TRAIN.RNN_GRAD_CLIP = 0.25
 __C.TRAIN.FLAG = True
@@ -101,6 +103,8 @@ def _merge_a_into_b(a, b):
 def cfg_from_file(filename):
     """Load a config file and merge it into the default options."""
     import yaml
+    import os
+    print(os.getcwd())
     with open(filename, 'r') as f:
         yaml_cfg = edict(yaml.load(f, Loader=yaml.FullLoader))
 

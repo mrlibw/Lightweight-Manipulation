@@ -11,6 +11,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from miscc.config import cfg
 from attention import SpatialAttention as SPATIAL_NET
 from attention import ChannelAttention as CHANNEL_NET
+from sharp_detector import SharpDetector
 
 class GLU(nn.Module):
     def __init__(self):
@@ -457,7 +458,9 @@ class GET_IMAGE_G(nn.Module):
         out_img = self.img(h_code)
         return out_img
 
-
+# ======================
+#  used Generator model
+# ======================
 class G_NET(nn.Module):
     def __init__(self):
         super(G_NET, self).__init__()
@@ -481,7 +484,7 @@ class G_NET(nn.Module):
         
         fake_imgs = []
         att_maps = []
-        c_code, mu, logvar = self.ca_net(sent_emb)
+        c_code, mu, logvar = self.ca_net(sent_emb)  # VAE
         if cfg.TREE.BRANCH_NUM > 0:
             img_code32 = self.imgUpSample1(region_features)
             h_code1 = self.h_net1(z_code, c_code, cnn_code, img_code32, mask, word_embs)
@@ -563,9 +566,12 @@ def downBlock(in_planes, out_planes):
 
 # Downsale the spatial size by a factor of 16
 def encode_image_by_16times(ndf):
+    input_ch = 4 if cfg.TRAIN.USE_SHARP_REGION_MASK else 3
     encode_img = nn.Sequential(
         # --> state size. ndf x in_size/2 x in_size/2
-        nn.Conv2d(3, ndf, 4, 2, 1, bias=False),
+        ### nn.Conv2d(3, ndf, 4, 2, 1, bias=False),  # commented out by takumi
+        ### nn.Conv2d(4, ndf, 4, 2, 1, bias=False),  # modified from 3 to 4 (= 3 + 1)
+        nn.Conv2d(input_ch, ndf, 4, 2, 1, bias=False),  # modified from 3 to 4 (= 3 + 1)
         nn.LeakyReLU(0.2, inplace=True),
         # --> state size 2ndf x x in_size/4 x in_size/4
         nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
@@ -666,12 +672,24 @@ class D_NET256(nn.Module):
         else:
             self.UNCOND_DNET = None
         self.COND_DNET = D_GET_LOGITS(ndf, nef, bcondition=True)
+        self.sharp_detector = SharpDetector()
 
-    def forward(self, x_var):
-        x_code16 = self.img_code_s16(x_var)
+    def forward(self, x_var, epoch):  # x_var.shape: [10, 3, 256, 256]
+        # x_code16 = self.img_code_s16(x_var)  # feed both x and mask
+        if cfg.TRAIN.USE_SHARP_REGION_MASK:
+            if epoch > 50:
+                # with torch.no_grad():
+                sharp_mask = self.sharp_detector.get_mask(x_var)
+                x_code16 = self.img_code_s16(torch.cat([x_var, sharp_mask], dim=1))  # feed both x and mask
+            else:
+                bs, _, h, w = x_var.shape
+                dummy_mask = torch.zeros(bs, 1, h, w).to('cuda')
+                x_code16 = self.img_code_s16(torch.cat([x_var, dummy_mask], dim=1))  # feed both x and mask
+        else:
+            x_code16 = self.img_code_s16(x_var)  # feed both x and mask
         x_code8 = self.img_code_s32(x_code16)
         x_code4 = self.img_code_s64(x_code8)
         x_code4 = self.img_code_s64_1(x_code4)
         x_code4 = self.img_code_s64_2(x_code4)
-        return x_code4
+        return x_code4  # shape: [10, 512, 4, 4]
 
