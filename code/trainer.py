@@ -30,7 +30,7 @@ import sys
 from mask import get_batch_mask
 import matplotlib.pyplot as plt
 
-from mask import get_batch_mask
+from mask_fcn import get_batch_mask
 
 
 # ################# Text to image task############################ #
