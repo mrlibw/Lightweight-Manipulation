@@ -1,11 +1,12 @@
 from __future__ import print_function
-from six.moves import range
+#from six.moves import range
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
+from torchvision import models
 
 from PIL import Image
 
@@ -19,7 +20,7 @@ from model import RNN_ENCODER, CNN_ENCODER
 from VGGFeatureLoss import VGGNet
 
 from miscc.losses import words_loss
-from miscc.losses import discriminator_loss, generator_loss, KL_loss
+from miscc.losses import discriminator_loss, generator_loss, KL_loss, M_loss
 
 import os
 import time
@@ -30,6 +31,12 @@ from pdb import set_trace as db
 from compute_fid import FidCalculater
 # from sharp_detector import blurring
 
+import matplotlib.pyplot as plt
+
+from mask_fcn import get_batch_mask
+from mask_torch import hist_batch_mask
+
+
 # ################# Text to image task############################ #
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword):
@@ -39,9 +46,8 @@ class condGANTrainer(object):
             self.image_dir = os.path.join(output_dir, 'Image')
             mkdir_p(self.model_dir)
             mkdir_p(self.image_dir)
-        
-        if cfg.CUDA:
-            torch.cuda.set_device(cfg.GPU_ID)
+
+        torch.cuda.set_device(cfg.GPU_ID)
         cudnn.benchmark = True
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
@@ -178,8 +184,6 @@ class condGANTrainer(object):
             netD = netsD[i]
             torch.save(netD.state_dict(),
                 '%s/netD%d.pth' % (self.model_dir, i))
-            torch.save(netD.state_dict(),
-                '%s/netD%d_%d.pth' % (self.model_dir, i, epoch))
         print('Save G/Ds models.')
 
     def set_requires_grad_value(self, models_list, brequires):
@@ -243,11 +247,15 @@ class condGANTrainer(object):
         text_encoder, image_encoder, netG, netsD, start_epoch, style_loss = self.build_models()
         avg_param_G = copy_G_params(netG)
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
+        
+        if cfg.TRAIN.MASK_HIST == False:
+            fcn = models.segmentation.fcn_resnet101(pretrained=True).eval()
+            fcn.to('cuda')
+            
         real_labels, fake_labels, match_labels = self.prepare_labels()
 
         batch_size = self.batch_size
         nz = cfg.GAN.Z_DIM
-        batch_aug = cfg.TRAIN.BATCH_AUG
 
         gen_iterations = 0
         lst_fid_value = []
@@ -286,21 +294,23 @@ class condGANTrainer(object):
                 num_words = words_embs.size(2)  # num_words = 18
                 if mask.size(1) > num_words:
                     mask = mask[:, :num_words]
-                
-                is_last = (step == self.num_batches-1)
-                is_zero_grad = (step%batch_aug == 0)
-                is_step = (step%batch_aug == batch_aug-1)
-                divider = (self.num_batches%batch_aug) if is_last else batch_aug
-                if (divider==0):
-                    divider = batch_aug
 
                 #######################################################
                 # (2) Generate fake images
                 ######################################################
-                real_img = imgs[-1]
+                real_img = imgs[-1] # our batch images
+
                 vgg_features = style_loss(real_img)[0]
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
-                                                    cnn_code, region_features, vgg_features)  # fake_imgs.shpae = [10, 3, 256, 256]
+                                                    cnn_code, region_features, vgg_features)
+
+                fake_img = fake_imgs[-1]
+                
+                if cfg.TRAIN.MASK_HIST:
+                    mask_img = hist_batch_mask(real_img, fake_img)
+                else:
+                    mask_img = get_batch_mask(real_img, model=fcn, show=False)
+                
                 
                 # calculate the number of parameters in the generator
                 #pytorch_total_params = sum(p.numel() for p in netG.parameters()) 
@@ -322,20 +332,14 @@ class condGANTrainer(object):
                 errD_total = 0
                 D_logs = ''
                 for i in range(len(netsD)):
-                    if(is_zero_grad):
-                        netsD[i].zero_grad()
+                    netsD[i].zero_grad()
                     errD, result = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels,
                                               words_embs, cap_lens, image_encoder, class_ids, w_words_embs, 
                                               wrong_caps_len, wrong_cls_id, word_labels, epoch, cfg)  # imgs[0].shape = [10, 3, 256, 256]
                     # backward and update parameters
                     errD.backward(retain_graph=True)
-                    
-                    if (is_step or is_last):
-                        for param in netsD[i].parameters():
-                            if param.grad is not None:
-                                param.grad = param.grad/divider
-                        optimizersD[i].step()
+                    optimizersD[i].step()
                     errD_total += errD
                     D_logs += 'errD%d: %.2f ' % (i, errD)
                     D_logs += "result_%d: %.2f " % (i, result)
@@ -352,21 +356,22 @@ class condGANTrainer(object):
                 step += 1
                 gen_iterations += 1
 
-                if (is_zero_grad):
-                    netG.zero_grad()
+
+                netG.zero_grad()
                 errG_total, G_logs = \
                     generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens,\
                                     class_ids, style_loss, imgs, epoch)
                 kl_loss = KL_loss(mu, logvar)
                 errG_total += kl_loss
+
+                mask_loss = M_loss(real_img, fake_img, mask_img)
+                errG_total += mask_loss
+
                 G_logs += 'kl_loss: %.2f ' % kl_loss
+                G_logs += 'mask_loss: %2f' % mask_loss
                 errG_total.backward()
-                if (is_step or is_last):
-                    for param in netG.parameters():
-                        if param.grad is not None:
-                            param.grad = param.grad/divider
-                    optimizerG.step()
+                optimizerG.step()
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.999).add_(0.001, p.data)
 
@@ -430,136 +435,132 @@ class condGANTrainer(object):
 
     def sampling(self, split_dir):
         if cfg.TRAIN.NET_G == '':
-            print('Error: the path for models is not found!')
-            return
-
-        ######################################################
-        # (1) Load Models
-        ######################################################
-        # Loading Generator Model (Model 1)
-        if cfg.GAN.B_DCGAN:
-            netG = G_DCGAN()
+            print('Error: the path for morels is not found!')
         else:
-            netG = G_NET()
-        netG.apply(weights_init)
-        if cfg.CUDA:
+            if split_dir == 'test':
+                split_dir = 'valid'
+            # Build and load the generator
+            if cfg.GAN.B_DCGAN:
+                netG = G_DCGAN()
+            else:
+                netG = G_NET()
+            netG.apply(weights_init)
             netG.cuda()
-        netG.eval()
-        # Load from file
-        model_dir = cfg.TRAIN.NET_G
-        state_dict = \
-            torch.load(model_dir, map_location=lambda storage, loc: storage)
-        netG.load_state_dict(state_dict)
-        print('Load G from: ', model_dir)
-
-        # Loading text encoder (Model 2)
-        text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-        state_dict = \
-            torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-        text_encoder.load_state_dict(state_dict)
-        print('Load text encoder from:', cfg.TRAIN.NET_E)
-        if cfg.CUDA:
+            netG.eval()
+            #
+            text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
+            state_dict = \
+                torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+            text_encoder.load_state_dict(state_dict)
+            print('Load text encoder from:', cfg.TRAIN.NET_E)
             text_encoder = text_encoder.cuda()
-        text_encoder.eval()
+            text_encoder.eval()
 
-        # Loading Image encoder (Model 3)
-        image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
-        img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
-        state_dict = \
-            torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
-        image_encoder.load_state_dict(state_dict)
-        for p in image_encoder.parameters():
-            p.requires_grad = False
-        print('Load image encoder from:', img_encoder_path)
-        if cfg.CUDA:
+            image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
+            img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
+            state_dict = \
+                torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
+            image_encoder.load_state_dict(state_dict)
+            for p in image_encoder.parameters():
+                p.requires_grad = False
+            print('Load image encoder from:', img_encoder_path)
             image_encoder = image_encoder.cuda()
-        image_encoder.eval()
+            image_encoder.eval()
 
-        # Loading style encoder (Model 4)
-        style_loss = VGGNet()
-        for p in style_loss.parameters():
-            p.requires_grad = False
-        print("Load the style loss model")
-        style_loss.eval()
-        if cfg.CUDA:
+
+            style_loss = VGGNet()
+            for p in style_loss.parameters():
+                p.requires_grad = False
+
+            print("Load the style loss model")
+            style_loss.eval()
             style_loss = style_loss.cuda()
 
-        # Some additional steps before the llop
-        # create the path for the generated image
-        if split_dir == 'test':
-            split_dir = 'valid'
-        s_tmp = model_dir[:model_dir.rfind('.pth')]
-        save_dir = '%s/%s' % (s_tmp, split_dir)
-        mkdir_p(save_dir)
-        
-        ######################################################
-        # (2) Generate fake images
-        ######################################################
-        cnt = 0
-        idx = 0 ###
-        batch_size = self.batch_size
-        for _ in range(10):  # (cfg.TEXT.CAPTIONS_PER_IMAGE):
-            for step, data in enumerate(self.data_loader, 0):
-                cnt += batch_size
-                
-                # Preprocess the data
-                imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
-                            wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
-                if cfg.CUDA:
+            batch_size = self.batch_size
+            nz = cfg.GAN.Z_DIM
+            noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
+            noise = noise.cuda()
+
+            model_dir = cfg.TRAIN.NET_G
+            state_dict = \
+                torch.load(model_dir, map_location=lambda storage, loc: storage)
+            netG.load_state_dict(state_dict)
+            print('Load G from: ', model_dir)
+
+            # the path to save generated images
+            s_tmp = model_dir[:model_dir.rfind('.pth')]
+            save_dir = '%s/%s' % (s_tmp, split_dir)
+            mkdir_p(save_dir)
+
+            cnt = 0
+            idx = 0 ###
+            for _ in range(10):  # (cfg.TEXT.CAPTIONS_PER_IMAGE):
+                for step, data in enumerate(self.data_loader, 0):
+                    cnt += batch_size
+                    if step % 100 == 0:
+                        print('step: ', step)
+                    
+                    imgs, captions, cap_lens, class_ids, keys, wrong_caps, \
+                                wrong_caps_len, wrong_cls_id, noise, word_labels = prepare_data(data)
+
                     noise = noise.cuda()
-                
-                # Calculate Text embedding
-                hidden = text_encoder.init_hidden(batch_size)
-                words_embs, sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
-                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
-            
-                # Calculate image embeding
-                region_features, cnn_code = image_encoder(imgs[-1])
 
-                # generate mask
-                mask = (wrong_caps == 0)
-                num_words = words_embs.size(2)
-                if mask.size(1) > num_words:
-                    mask = mask[:, :num_words]
-                
-                # Generate fake images
-                real_img = imgs[-1]
-                vgg_features = style_loss(real_img)[0]
-                fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
-                                                cnn_code, region_features, vgg_features)
-                
-                # printing some status
-                if step % 100 == 0:
-                    print('step: ', step)
-                if idx % 1000 == 0:
-                    print(idx)
-                
-                if (idx>100):
-                    return
-                # Save images
-                for j in range(batch_size):
-                    if not os.path.isdir(save_dir):
-                        print('Make a new folder: ', save_dir)
-                        mkdir_p(save_dir)
+                    hidden = text_encoder.init_hidden(batch_size)
 
-                    k = -1
-                    im = fake_imgs[k][j].data.cpu().numpy()
-                    im = (im + 1.0) * 127.5
-                    im = im.astype(np.uint8)
-                    im = np.transpose(im, (1, 2, 0))
-                    im = Image.fromarray(im)
-                    fullpath = '%s/%d_fake.png' % (save_dir, idx)
-                    im.save(fullpath)
+                    words_embs, sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
+                    words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
 
-                    im = imgs[k][j].data.cpu().numpy()
-                    im = (im + 1.0) * 127.5
-                    im = im.astype(np.uint8)
-                    im = np.transpose(im, (1, 2, 0))
-                    im = Image.fromarray(im)
-                    fullpath = '%s/%d_real.png' % (save_dir, idx)
-                    idx = idx+1
-                    im.save(fullpath)
+                    #w_words_embs, w_sent_emb = text_encoder(wrong_caps, wrong_caps_len, hidden)
+                    #w_words_embs, w_sent_emb = w_words_embs.detach(), w_sent_emb.detach()
 
+                    region_features, cnn_code = image_encoder(imgs[-1])
+
+                    mask = (wrong_caps == 0)
+                    num_words = words_embs.size(2)
+                    if mask.size(1) > num_words:
+                        mask = mask[:, :num_words]
+
+                    #######################################################
+                    # (2) Generate fake images
+                    ######################################################
+                    real_img = imgs[-1]
+                    vgg_features = style_loss(real_img)[0]
+                    fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
+                                                    cnn_code, region_features, vgg_features)
+
+                    if idx % 1000 == 0:
+                        print(idx)
+   
+                    for j in range(batch_size):
+                        s_tmp = '%s/fake' % (save_dir)
+                        folder = s_tmp[:s_tmp.rfind('/')]
+                        if not os.path.isdir(folder):
+                            print('Make a new folder: ', folder)
+                            mkdir_p(folder)
+                        k = -1
+                        im = fake_imgs[k][j].data.cpu().numpy()
+                        im = (im + 1.0) * 127.5
+                        im = im.astype(np.uint8)
+                        im = np.transpose(im, (1, 2, 0))
+                        im = Image.fromarray(im)
+                        fullpath = '%s_s%d.png' % (s_tmp, idx)
+                        im.save(fullpath)
+
+
+                        s_tmp = '%s/real' % (save_dir)
+                        folder = s_tmp[:s_tmp.rfind('/')]
+                        if not os.path.isdir(folder):
+                            print('Make a new folder: ', folder)
+                            mkdir_p(folder)
+
+                        im = imgs[k][j].data.cpu().numpy()
+                        im = (im + 1.0) * 127.5
+                        im = im.astype(np.uint8)
+                        im = np.transpose(im, (1, 2, 0))
+                        im = Image.fromarray(im)
+                        fullpath = '%s_r%d.png' % (s_tmp, idx)
+                        idx = idx+1
+                        im.save(fullpath)
 
     def gen_example(self, data_dic):
         if cfg.TRAIN.NET_G == '':
@@ -572,8 +573,7 @@ class condGANTrainer(object):
                 torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
-            if cfg.CUDA:
-                text_encoder = text_encoder.cuda()
+            text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
             # The image encoder
@@ -583,8 +583,7 @@ class condGANTrainer(object):
                 torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
             image_encoder.load_state_dict(state_dict)
             print('Load image encoder from:', img_encoder_path)
-            if cfg.CUDA:
-                image_encoder = image_encoder.cuda()
+            image_encoder = image_encoder.cuda()
             image_encoder.eval()
 
             style_loss = VGGNet()
@@ -593,8 +592,7 @@ class condGANTrainer(object):
 
             print("Load the style loss model")
             style_loss.eval()
-            if cfg.CUDA:
-                style_loss = style_loss.cuda()
+            style_loss = style_loss.cuda()
 
             # The main module
             if cfg.GAN.B_DCGAN:
@@ -607,8 +605,7 @@ class condGANTrainer(object):
                 torch.load(model_dir, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict)
             print('Load G from: ', model_dir)
-            if cfg.CUDA:
-                netG.cuda()
+            netG.cuda()
             netG.eval()
 
             for key in data_dic:
@@ -621,13 +618,11 @@ class condGANTrainer(object):
                 captions = Variable(torch.from_numpy(captions), volatile=True)
                 cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
 
-                if cfg.CUDA:
-                    captions = captions.cuda()
-                    cap_lens = cap_lens.cuda()
+                captions = captions.cuda()
+                cap_lens = cap_lens.cuda()
                 for i in range(1):  
                     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-                    if cfg.CUDA:
-                        noise = noise.cuda()
+                    noise = noise.cuda()
 
                     #######################################################
                     # (1) Extract text and image embeddings
