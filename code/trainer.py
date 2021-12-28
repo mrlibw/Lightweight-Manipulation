@@ -408,7 +408,7 @@ class condGANTrainer(object):
             f.write("use_sharp_region_mask: {}\n".format(cfg.TRAIN.USE_SHARP_REGION_MASK))
             f.write("use_blur_real_image: {}\n".format(cfg.TRAIN.USE_BLUR_REAL_IMAGE))
             f.write("number of max epoch: {}\n".format(cfg.TRAIN.MAX_EPOCH))
-            f.write("COMMENTS:\n blur kernel size 9 pad size 4\n")  # some comments
+            f.write("COMMENTS:\n blur kernel size 9 pad size 4. Now test run after merging.\n")  # some comments
 
         self.save_model(netG, avg_param_G, netsD, self.max_epoch)
 
