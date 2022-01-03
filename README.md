@@ -36,7 +36,6 @@ python main.py --cfg cfg/train_bird.yml --gpu 2
 
 #### Pretrained DAMSM Model
 - [DAMSM for bird](https://drive.google.com/file/d/1n-qKR7K4V-4oVC1GaGeIHLTQfIzPsTsE/view?usp=sharing). Download and save it to `DAMSMencoders/`
-- [DAMSM for coco](https://drive.google.com/file/d/1GnXhzMKtFM-RK_ATsfU1tomta1Ko72vr/view?usp=sharing). Download and save it to `DAMSMencoders/`
 
 #### Pretrained Lightweight Model 
 - [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
