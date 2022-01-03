@@ -29,14 +29,11 @@ python pretrain_DAMSM.py --cfg cfg/DAMSM/bird.yml --gpu 0
 python pretrain_DAMSM.py --cfg cfg/DAMSM/coco.yml --gpu 1
 ```
 #### Our Model
-- Train the model for bird dataset:
+- Train the model with histogram maching step for bird dataset:
 ```
 python main.py --cfg cfg/train_bird.yml --gpu 2
 ```
-- Train the model for coco dataset: 
-```
-python main.py --cfg cfg/train_coco.yml --gpu 3
-```
+- To train the model with histogram maching step for bird dataset change MASK_HIST to 'True' in 'train_bird.yml'
 
 `*.yml` files include configuration for training and testing. To reduce the number of parameters used in the model, please edit DF_DIM and/or GF_DIM values in the corresponding `*.yml` files.
 
@@ -52,13 +49,9 @@ python main.py --cfg cfg/train_coco.yml --gpu 3
 ```
 python main.py --cfg cfg/eval_bird.yml --gpu 4
 ```
-- Test our model on coco dataset: 
-```
-python main.py --cfg cfg/eval_coco.yml --gpu 5
-```
 ### Evaluation
 
-- To generate images for all captions in the testing dataset, change B_VALIDATION to `True` in the `eval_*.yml`. 
+- To generate images for all captions in the testing dataset, change B_VALIDATION to `True` in the `eval_bird.yml`. 
 - [Fréchet Inception Distance](https://github.com/mseitzer/pytorch-fid).
 
 ### Code Structure
