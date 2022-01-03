@@ -30,7 +30,7 @@ python pretrain_DAMSM.py --cfg cfg/DAMSM/bird.yml --gpu 0
 ```
 python main.py --cfg cfg/train_bird.yml --gpu 0
 ```
-- To train the model with histogram maching step for bird dataset change MASK_HIST to 'True' in 'train_bird.yml'
+- To train the model with histogram maching step for bird dataset change MASK_HIST to `True` in `train_bird.yml`.
 
 `*.yml` files include configuration for training and testing. To reduce the number of parameters used in the model, please edit DF_DIM and/or GF_DIM values in the corresponding `*.yml` files.
 
