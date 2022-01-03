@@ -69,10 +69,10 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - code/miscc/utils.py: additional functions.
 
 ## Authors
-- Yoga Fransiskus (gedward@student.ethz.ch)
+- Yoga Fransiskus (ywibowo@student.ethz.ch)
 - Zhi Ye (yezh@student.ethz.ch)
-- Takumi Takada (hoehnm@student.ethz.ch)
-- Adnana Tudose
+- Takumi Takada (ttakada@student.ethz.ch)
+- Adnana Tudose (atudose@student.ethz.ch)
 - 
 ### Acknowledgements
 This code borrows heavily from Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)) repositories. We really appreciate their outstanding work.
