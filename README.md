@@ -65,6 +65,7 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - code/VGGFeatureLoss.py: defines the architecture of the VGG-16.
 - code/datasets.py: defines the class for loading images and captions.
 - code/pretrain_DAMSM.py: trains the text and image encoders, harnesses and reports the progress of training. 
+- code/compute_fid.py: computes the FID score.
 - code/miscc/losses.py: defines and computes the losses.
 - code/miscc/config.py: creates the option list.
 - code/miscc/utils.py: additional functions.
