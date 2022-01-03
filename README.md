@@ -1,7 +1,5 @@
 # Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing
-This repository contains the codes and models for the the course project of [Deep Learning](http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021).\
-Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1).\
-Our project report can be found [here](project_report.pdf).
+This repository contains the codes and models for the the course project of [Deep Learning](http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021).Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1).Our project report can be found [here](project_report.pdf).
 
 ### Overview
 <img src="flowchart.jpg"/>
