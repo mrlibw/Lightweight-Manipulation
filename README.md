@@ -1,8 +1,8 @@
 # Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing
-Pytorch implementation for Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing. The goal is to introduce two new methods image comparing and sharp region enhancing to improve the quality of text-guided image generation. In this repository they are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)). 
+This repository contains the codes and models for the the course project of [Deep Learning](http://http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021). Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1). Please find our project report [here](project_report.pdf).
 
 ### Overview
-<img src="archi.jpg" width="940px" height="230px"/>
+Pytorch implementation for Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing. The goal is to introduce two new methods image comparing and sharp region enhancing to improve the quality of text-guided image generation. In this repository they are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)). 
 
 **[Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf).**  
 [Bowen Li](https://mrlibw.github.io/), [Xiaojuan Qi](https://xjqi.github.io/), [Philip H. S. Torr](http://www.robots.ox.ac.uk/~phst/), [Thomas Lukasiewicz](http://www.cs.ox.ac.uk/people/thomas.lukasiewicz/).<br> University of Oxford, University of Hong Kong <br> NeurIPS 2020 <br>
@@ -87,3 +87,6 @@ If you find this useful for your research, please use the following.
 
 ### Acknowledgements
 This code borrows heavily from [ManiGAN](https://github.com/mrlibw/ManiGAN) and [ControlGAN](https://github.com/mrlibw/ControlGAN) repositories. Many thanks.
+
+## References
+<a id="1">[1]</a> [Li, Bowen and Qi, Xiaojuan and Torr, Philip and Lukasiewicz, Thomas. "Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation". 2020.](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf)
