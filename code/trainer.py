@@ -249,6 +249,7 @@ class condGANTrainer(object):
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
         
         if cfg.TRAIN.MASK_HIST == False:
+            # load FCN model
             fcn = models.segmentation.fcn_resnet101(pretrained=True).eval()
             fcn.to('cuda')
             
@@ -307,8 +308,10 @@ class condGANTrainer(object):
                 fake_img = fake_imgs[-1]
                 
                 if cfg.TRAIN.MASK_HIST:
+                    # Histogram Matching approach
                     mask_img = hist_batch_mask(real_img, fake_img)
                 else:
+                    # Pre-trained model approach
                     mask_img = get_batch_mask(real_img, model=fcn, show=False)
                 
                 
@@ -364,8 +367,10 @@ class condGANTrainer(object):
                                     class_ids, style_loss, imgs, epoch)
                 kl_loss = KL_loss(mu, logvar)
                 errG_total += kl_loss
-
+                
+                # compute mask loss
                 mask_loss = M_loss(real_img, fake_img, mask_img)
+                # add mask loss to the total loss of the generator
                 errG_total += mask_loss
 
                 G_logs += 'kl_loss: %.2f ' % kl_loss
