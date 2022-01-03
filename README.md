@@ -59,6 +59,8 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - code/main.py: the entry point for training and testing.
 - code/trainer.py: creates the networks, harnesses and reports the progress of training.
 - code/model.py: defines the architecture.
+- code/mask_fcn: compute the mask with pre-trained model approach.
+- code/mask_HM: compute the mask with histogram matching approach.
 - code/attention.py: defines the spatial and channel-wise attentions.
 - code/VGGFeatureLoss.py: defines the architecture of the VGG-16.
 - code/datasets.py: defines the class for loading images and captions.
@@ -68,7 +70,7 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - code/miscc/utils.py: additional functions.
 
 ### Acknowledgements
-This code borrows heavily from [ManiGAN](https://github.com/mrlibw/ManiGAN) and [ControlGAN](https://github.com/mrlibw/ControlGAN) repositories. Many thanks.
+This code borrows heavily from Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)) repositories. We really appreciate their outstanding work.
 
 ## References
 <a id="1">[1]</a> [Li, Bowen and Qi, Xiaojuan and Torr, Philip and Lukasiewicz, Thomas. "Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation". 2020.](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf)
