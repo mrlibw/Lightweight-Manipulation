@@ -16,17 +16,20 @@ def get_batch_mask(real_batch, model, show=False):
 
     fcn = model
     
+    # normalize with mean and std of ImageNet
     trf = T.Compose([T.Resize(224),
                      T.Normalize(mean = [0.485, 0.456, 0.406], 
                                  std = [0.229, 0.224, 0.225])
                     ])
                     
+    # bring back image to the size of the images in Lightweight GAN
     trf_back = T.Compose([T.Resize(256)])
 
     trf_real_batch = trf(real_batch.float())
 
     out = fcn(trf_real_batch)['out']
 
+    # output pixel class with highest probability
     out = torch.argmax(out, dim=1, keepdim=True)
 
     # bird class
@@ -34,6 +37,7 @@ def get_batch_mask(real_batch, model, show=False):
     
     out = trf_back(out)
     
+    # invert mask to ignore bird and retain background
     out = (1 - out).float()
 
     if show:
