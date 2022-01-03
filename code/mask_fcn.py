@@ -1,3 +1,5 @@
+"""Compute the binary mask using the pre-trained FCN model."""
+
 from torchvision import models
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
