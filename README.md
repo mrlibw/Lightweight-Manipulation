@@ -60,7 +60,7 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - code/trainer.py: creates the networks, harnesses and reports the progress of training.
 - code/model.py: defines the architecture.
 - code/mask_fcn: compute the mask with pre-trained model approach.
-- code/mask_HM: compute the mask with histogram matching approach.
+- code/mask_torch: compute the mask with histogram matching approach.
 - code/attention.py: defines the spatial and channel-wise attentions.
 - code/VGGFeatureLoss.py: defines the architecture of the VGG-16.
 - code/datasets.py: defines the class for loading images and captions.
