@@ -28,7 +28,7 @@ python pretrain_DAMSM.py --cfg cfg/DAMSM/bird.yml --gpu 0
 #### Our Model
 - Train the model for bird dataset:
 ```
-python main.py --cfg cfg/train_bird.yml --gpu 2
+python main.py --cfg cfg/train_bird.yml --gpu 0
 ```
 - To train the model with histogram maching step for bird dataset change MASK_HIST to 'True' in 'train_bird.yml'
 
@@ -37,17 +37,10 @@ python main.py --cfg cfg/train_bird.yml --gpu 2
 #### Pretrained DAMSM Model
 - [DAMSM for bird](https://drive.google.com/file/d/1n-qKR7K4V-4oVC1GaGeIHLTQfIzPsTsE/view?usp=sharing). Download and save it to `DAMSMencoders/`
 
-#### Pretrained Lightweight Model 
-- [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
-
-
-#### Pretrained Our Model 
-- [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
-
 ### Testing
 - Test our model on bird dataset:
 ```
-python main.py --cfg cfg/eval_bird.yml --gpu 4
+python main.py --cfg cfg/eval_bird.yml --gpu 0
 ```
 ### Evaluation
 
