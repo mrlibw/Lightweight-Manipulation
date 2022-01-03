@@ -24,12 +24,9 @@ All code was developed and tested on CentOS 7 with Python 3.7 (Anaconda) and PyT
 ```
 python pretrain_DAMSM.py --cfg cfg/DAMSM/bird.yml --gpu 0
 ```
-- Pre-train DAMSM model for coco dataset: 
-```
-python pretrain_DAMSM.py --cfg cfg/DAMSM/coco.yml --gpu 1
-```
+
 #### Our Model
-- Train the model with histogram maching step for bird dataset:
+- Train the model for bird dataset:
 ```
 python main.py --cfg cfg/train_bird.yml --gpu 2
 ```
@@ -42,6 +39,10 @@ python main.py --cfg cfg/train_bird.yml --gpu 2
 - [DAMSM for coco](https://drive.google.com/file/d/1GnXhzMKtFM-RK_ATsfU1tomta1Ko72vr/view?usp=sharing). Download and save it to `DAMSMencoders/`
 
 #### Pretrained Lightweight Model 
+- [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
+
+
+#### Pretrained Our Model 
 - [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
 
 ### Testing
