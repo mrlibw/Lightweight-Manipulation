@@ -13,7 +13,7 @@ pip3 install -r requirements.txt
 
 ### Data
 
-1. Download the preprocessed metadata for [bird](https://drive.google.com/file/d/1D87x3JAt0w9ymlKElh7ArpAviKUqkNbN/view?usp=sharing) and save it into `data/`.
+1. Download the preprocessed metadata for [bird](https://drive.google.com/file/d/1R01J63Vqzg5463ycIyK_MHI4jXMFCihx/view) and save it into `data/`.
 2. Download [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) dataset and extract the images to `data/birds/`
 
 ### Training
@@ -43,10 +43,9 @@ python main.py --cfg cfg/train_coco.yml --gpu 3
 #### Pretrained DAMSM Model
 - [DAMSM for bird](https://drive.google.com/file/d/1n-qKR7K4V-4oVC1GaGeIHLTQfIzPsTsE/view?usp=sharing). Download and save it to `DAMSMencoders/`
 - [DAMSM for coco](https://drive.google.com/file/d/1GnXhzMKtFM-RK_ATsfU1tomta1Ko72vr/view?usp=sharing). Download and save it to `DAMSMencoders/`
+
 #### Pretrained Lightweight Model 
 - [Bird](https://drive.google.com/file/d/1ojDzj4zak0-L9tG48hSfN9FxibwjsS6V/view?usp=sharing). Download and save it to `models/`
-
-- [COCO](https://drive.google.com/file/d/1fhGtqEF2FRZNq8-wNrDUgD6paMGEC-SW/view?usp=sharing). Download and save it to `models/`
 
 ### Testing
 - Test our model on bird dataset:
@@ -73,20 +72,6 @@ python main.py --cfg cfg/eval_coco.yml --gpu 5
 - code/miscc/losses.py: defines and computes the losses.
 - code/miscc/config.py: creates the option list.
 - code/miscc/utils.py: additional functions.
-
-### Citation
-
-If you find this useful for your research, please use the following.
-
-```
-@article{li2020lightweight,
-  title={Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation},
-  author={Li, Bowen and Qi, Xiaojuan and Torr, Philip and Lukasiewicz, Thomas},
-  journal={Advances in Neural Information Processing Systems},
-  volume={33},
-  year={2020}
-}
-```
 
 ### Acknowledgements
 This code borrows heavily from [ManiGAN](https://github.com/mrlibw/ManiGAN) and [ControlGAN](https://github.com/mrlibw/ControlGAN) repositories. Many thanks.
