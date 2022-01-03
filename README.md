@@ -1,5 +1,5 @@
-# Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation
-Pytorch implementation for Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation. The goal is to introduce a lightweight generative adversarial network for efficient image manipulation using natural language descriptions.
+# Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing
+Pytorch implementation for Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing. The goal is to introduce two new methods image comparing and sharp region enhancing to improve the quality of text-guided image generation. In this repository they are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)). 
 
 ### Overview
 <img src="archi.jpg" width="940px" height="230px"/>
