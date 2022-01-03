@@ -73,7 +73,7 @@ python main.py --cfg cfg/eval_bird.yml --gpu 4
 - Zhi Ye (yezh@student.ethz.ch)
 - Takumi Takada (ttakada@student.ethz.ch)
 - Adnana Tudose (atudose@student.ethz.ch)
-- 
+
 ### Acknowledgements
 This code borrows heavily from Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)) repositories. We really appreciate their outstanding work.
 
