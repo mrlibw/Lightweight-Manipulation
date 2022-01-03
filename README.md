@@ -1,17 +1,20 @@
 # Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing
-This repository contains the codes and models for the the course project of [Deep Learning](http://http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021). Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1). Please find our project report [here](project_report.pdf).
+This repository contains the codes and models for the the course project of [Deep Learning](http://http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021). Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1).Our project report is [here](project_report.pdf).
 
 ### Overview
-Pytorch implementation for Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing. The goal is to introduce two new methods image comparing and sharp region enhancing to improve the quality of text-guided image generation. In this repository they are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)). 
+Two main focuses in text-based image editing GAN is how we preserve regions in the image that are not related to the text description and generating higher quality images. In our project we introduce two new methods: image comparing and sharp region enhancing (SRE) to improve the quality of text-guided image generation. In this repository they are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)). 
 
-**[Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf).**  
-[Bowen Li](https://mrlibw.github.io/), [Xiaojuan Qi](https://xjqi.github.io/), [Philip H. S. Torr](http://www.robots.ox.ac.uk/~phst/), [Thomas Lukasiewicz](http://www.cs.ox.ac.uk/people/thomas.lukasiewicz/).<br> University of Oxford, University of Hong Kong <br> NeurIPS 2020 <br>
+### Useage
+Get our repository and the required dependencies:
+```
+git clone https://github.com/fransiskusyoga/Lightweight-Manipulation.git
+pip3 install -r requirements.txt
+```
 
 ### Data
 
-1. Download the preprocessed metadata for [bird](https://drive.google.com/file/d/1D87x3JAt0w9ymlKElh7ArpAviKUqkNbN/view?usp=sharing) and [coco](https://drive.google.com/file/d/1hNEsFDj7S0aG1tXFvJy1DXtQWSl2Z9gZ/view?usp=sharing), and save both into `data/`
+1. Download the preprocessed metadata for [bird](https://drive.google.com/file/d/1D87x3JAt0w9ymlKElh7ArpAviKUqkNbN/view?usp=sharing) and save it into `data/`.
 2. Download [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) dataset and extract the images to `data/birds/`
-3. Download [coco](http://cocodataset.org/#download) dataset and extract the images to `data/coco/`
 
 ### Training
 All code was developed and tested on CentOS 7 with Python 3.7 (Anaconda) and PyTorch 1.1.
