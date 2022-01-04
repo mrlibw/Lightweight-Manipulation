@@ -1,9 +1,9 @@
 # Text-guided Image Manipulation with Image Comparing \& Sharp Region Enhancing
-This repository contains the codes and models for the the course project of [Deep Learning](http://www.da.inf.ethz.ch/teaching/2021/DeepLearning) (Fall 2021). Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1). Our project report can be found [here](project_report.pdf).
+This repository contains the codes and models for the the course project of [Deep Learning](http://www.da.inf.ethz.ch/teaching/2021/DeepLearning)(Fall 2021). Our project is based on the paper ["Lightweight Generative Adversarial Networks for Text-Guided Image Manipulation"](https://proceedings.neurips.cc/paper/2020/file/fae0b27c451c728867a567e8c1bb4e53-Paper.pdf) [[1]](#1). Our project report can be found [here](project_report.pdf).
 
 ### Overview
 <img src="flowchart.jpg"/>
-Two main focuses in text-based image editing GAN is how we preserve regions in the image that are not related to the text description and generating higher quality images. In our project we introduce two new methods: Image Comparing and Sharp Region Enhancing (SRE) to improve the quality of text-guided image generation. In this repository the two methods are integrated into the Lightweight Generative Adversarial Networks ([Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation)) and tested on CUB [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) data set.
+Two main focuses in text-based image editing GAN is how we preserve regions in the image that are not related to the text description and generating higher quality images. In our project we introduce two new methods: Image Comparing and Sharp Region Enhancing (SRE) to improve the quality of text-guided image generation. In this repository the two methods are integrated into the Lightweight Generative Adversarial Networks [Lightweight-Manipulation]（https://github.com/mrlibw/Lightweight-Manipulation) and tested on CUB [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) data set.
 
 ### Useage
 Get our repository and the required dependencies:
