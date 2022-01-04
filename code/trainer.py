@@ -532,6 +532,9 @@ class condGANTrainer(object):
                     vgg_features = style_loss(real_img)[0]
                     fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, \
                                                     cnn_code, region_features, vgg_features)
+                    
+                    # # UNCOMMENT HERE to activate GM
+                    # fake_imgs = GradientManipulator.apply(fake_imgs)
 
                     if idx % 1000 == 0:
                         print(idx)
@@ -689,3 +692,33 @@ class condGANTrainer(object):
                     im = Image.fromarray(im)
                     fullpath = '%s_SR.png' % (save_name)
                     im.save(fullpath)
+
+
+class GradientManipulator(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, inp):
+        """
+        In the forward pass we receive a Tensor containing the input and return
+        a Tensor containing the output. ctx is a context object that can be used
+        to stash information for backward computation. You can cache arbitrary
+        objects for use in the backward pass using the ctx.save_for_backward method.
+        """        
+        ctx.save_for_backward(inp)
+        return inp
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the loss
+        with respect to the output, and we need to compute the gradient of the loss
+        with respect to the input.
+        """
+        inp, = ctx.saved_tensors
+        laplacian_filter = torch.FloatTensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]]).view(1, 1, 3, 3).to(inp.device)
+        diff = torch.mean(inp,dim=1).unsqueeze(1) #rgb to greyscale
+        diff = torch.nn.functional.pad(diff,(1,1,1,1),mode='replicate')
+        diff = torch.nn.functional.conv2d(input=diff, weight=Variable(laplacian_filter), stride=1, padding=0) # the gradient image
+        diff = torch.tanh(torch.abs(diff)) + 1
+        grad_input = grad_output * diff
+        return grad_input
