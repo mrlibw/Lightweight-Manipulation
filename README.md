@@ -19,7 +19,7 @@ pip3 install -r requirements.txt
 2. Download [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) dataset and extract the images to `data/birds/`
 
 ### Training
-Training can be conducted on [Euler](https://scicomp.ethz.ch/wiki/Euler):
+Training can be conducted on [Euler](https://scicomp.ethz.ch/wiki/Euler).
 
 #### [DAMSM](https://github.com/taoxugit/AttnGAN) model includes a text encoder and an image encoder
 - Pre-train DAMSM model for bird dataset:
