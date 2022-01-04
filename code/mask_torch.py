@@ -85,5 +85,11 @@ def hist_batch_mask(real_img, fake_img):
     
     return masked_batch
 
+def M_loss(real, fake):
+    m_loss = torch.mean(((real - fake)**2))
+    return m_loss
 
-
+def mask_score():
+    real_mask = torch.mul(real, mask)
+    fake_mask = torch.mul(fake, mask)
+    return M_loss(real_mask, fake_mask)
