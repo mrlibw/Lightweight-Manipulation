@@ -47,6 +47,7 @@ python main.py --cfg cfg/eval_bird.yml --gpu 0
 
 - To generate images for all captions in the testing dataset, change B_VALIDATION to `True` in the `eval_bird.yml`. 
 - [Fréchet Inception Distance](https://github.com/mseitzer/pytorch-fid).
+- [Inception_Score](https://github.com/fransiskusyoga/Lightweight-Manipulation/blob/develop/code/check_inception_score.py).
 
 ### Code Structure
 - code/main.py: the entry point for training and testing.
