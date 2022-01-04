@@ -46,3 +46,14 @@ def get_batch_mask(real_batch, model, show=False):
         print("done")
     
     return out
+
+#compute MSE
+def M_loss(real, fake):
+    m_loss = torch.mean(((real - fake)**2))
+    return m_loss
+
+#compute mask score
+def mask_score():
+    real_mask = torch.mul(real, mask)
+    fake_mask = torch.mul(fake, mask)
+    return M_loss(real_mask, fake_mask)
