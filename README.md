@@ -3,7 +3,7 @@ This repository contains the codes and models for the the course project of [Dee
 
 ### Overview
 <img src="flowchart.jpg"/>
-Two main focuses in text-based image editing GAN is how we preserve regions in the image that are not related to the text description and generating higher quality images. In our project we introduce two new methods: Image Comparing and Sharp Region Enhancing (SRE) to improve the quality of text-guided image generation. In this repository the two methods are integrated into the Lightweight Generative Adversarial Networks [Lightweight-Manipulation]（https://github.com/mrlibw/Lightweight-Manipulation) and tested on CUB [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) data set.
+Two main focuses in text-based image editing GAN is how we preserve regions in the image that are not related to the text description and generating higher quality images. In our project we introduce two new methods: Image Comparing and Sharp Region Enhancing (SRE) to improve the quality of text-guided image generation. In this repository the two methods are integrated into the Lightweight Generative Adversarial Networks [Lightweight-Manipulation](https://github.com/mrlibw/Lightweight-Manipulation) and tested on CUB [bird](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) data set.
 
 ### Useage
 Get our repository and the required dependencies:
